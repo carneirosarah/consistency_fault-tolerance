@@ -1,16 +1,16 @@
 
 public class ServerReadHandler implements Runnable {
 
-    private String database;
+    private File database;
 
-    public ServerReadHandler(String database) {
+    public ServerReadHandler(File database) {
         this.database = database;
     }
 
     @Override
     public void run() {
 
-        System.out.println("Dados do arquivo ...");
+        System.out.println(database.fileReader());
 
     }
 }

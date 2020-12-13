@@ -4,11 +4,11 @@ import java.net.Socket;
 
 public class ServerWriteHandler implements Runnable {
 
-    private String database;
+    private File database;
     private Message message;
     private Integer sender;
 
-    public ServerWriteHandler(String database, Message message, Integer sender) {
+    public ServerWriteHandler(File database, Message message, Integer sender) {
         this.database = database;
         this.message = message;
         this.sender = sender;
@@ -18,7 +18,8 @@ public class ServerWriteHandler implements Runnable {
     public void run() {
 
         try {
-
+            Socket socket;
+            String str;
             int count = 0;
             Boolean flag = true;
 
@@ -37,18 +38,37 @@ public class ServerWriteHandler implements Runnable {
 
             if (flag) {
 
-                System.out.println("O Valor " + message.getNumber() + " é primo.");
+                str = "O Valor " + message.getNumber() + " é primo.";
             } else {
 
-                System.out.println("O Valor " + message.getNumber() + " não é primo.");
+                str = "O Valor " + message.getNumber() + " não é primo.";
             }
 
-            Socket socket = new Socket("localhost", 5000);
+            System.out.println(str);
+            database.fileWriter(str); // escreve a mensagem no servidor atual
+
+            // Replica a mensagem nos demais servidores
+            for (int i = 0; i < message.getServers().size(); i++) {
+
+                if (!message.getServers().get(i).equals(sender)) {
+
+                    socket = new Socket("localhost", message.getServers().get(i));
+                    ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+
+                    Message message = new Message(sender, 4, str);
+
+                    output.writeObject(message);
+                    output.flush();
+                    output.close();
+                }
+            }
+
+            // Libera o balance após a operação de consitencia
+            socket = new Socket("localhost", 5000);
             ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
             Message message = new Message(sender, 3);
 
-            // envia a requisição ao balancer
             output.writeObject(message);
             output.flush();
             output.close();

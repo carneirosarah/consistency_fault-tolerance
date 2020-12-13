@@ -28,13 +28,17 @@ public class BalancerWorker implements Runnable {
             Socket socket = new Socket("localhost", servers.get(selectedServer));
             ObjectOutput output = new ObjectOutputStream(socket.getOutputStream());
 
+            if (message.getType() == 0) {
+                message.setServers(servers);
+            }
+
             output.writeObject(message);
             output.flush();
             output.close();
 
             if (message.getType() == 0) {
 
-                System.out.println("Valor " + message.getNumber() + "recebido do cliente " + message.getSender() +
+                System.out.println("Valor " + message.getNumber() + " recebido do cliente " + message.getSender() +
                     " e direcionado para o servidor de dados " + servers.get(selectedServer));
             } else {
 

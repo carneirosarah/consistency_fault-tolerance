@@ -4,7 +4,7 @@ import java.net.Socket;
 
 public class DataServer extends Server {
 
-    private String database;
+    private File database;
 
     public DataServer(int port) throws IOException {
         super(port);
@@ -15,7 +15,8 @@ public class DataServer extends Server {
         try {
 
             DataServer server = new DataServer(Integer.parseInt(args[0]));
-            System.out.println("Data Server - Aguardando Conexão na porta " + Integer.parseInt(args[0]) + " ...");
+            System.out.println("Data Server - Aguardando Conexão na porta " + args[0] + " ...");
+            server.database = new File("Database_" + args[0] + ".txt");
 
             while (true) {
 
@@ -26,7 +27,12 @@ public class DataServer extends Server {
 
                 Server.closeSocket(socket);
 
-                if (message.getType() == 0) {
+                if (message.getType() == 4) {
+
+                    Thread replicationHandler = new Thread(new ServerReplicationHandler(server.database, message));
+                    replicationHandler.start();
+
+                } else if (message.getType() == 0) {
 
                     Thread writeHandler = new Thread(new ServerWriteHandler(server.database, message, Integer.parseInt(args[0])));
                     writeHandler.start();
