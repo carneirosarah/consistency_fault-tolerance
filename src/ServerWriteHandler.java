@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 
 public class ServerWriteHandler implements Runnable {
@@ -52,14 +53,20 @@ public class ServerWriteHandler implements Runnable {
 
                 if (!message.getServers().get(i).equals(sender)) {
 
-                    socket = new Socket("localhost", message.getServers().get(i));
-                    ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
+                    // tolerância a falhas
+                    try {
 
-                    Message message = new Message(sender, 4, str);
+                        socket = new Socket("localhost", message.getServers().get(i));
+                        ObjectOutputStream output = new ObjectOutputStream(socket.getOutputStream());
 
-                    output.writeObject(message);
-                    output.flush();
-                    output.close();
+                        Message message = new Message(sender, 4, str);
+
+                        output.writeObject(message);
+                        output.flush();
+                        output.close();
+
+                    } catch (ConnectException ex) {
+                    }
                 }
             }
 

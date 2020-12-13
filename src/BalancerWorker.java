@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
@@ -18,14 +19,46 @@ public class BalancerWorker implements Runnable {
     @Override
     public void run() {
 
+        Socket socket = null;
+
         try {
 
             // Round-robin Policy, seleciona o servidor de dados de maneira aleatoria
             Random random = new Random();
             Integer selectedServer = random.nextInt(servers.size());
 
+            // tolerância a falhas
+            try {
+
+                socket = new Socket("localhost", servers.get(selectedServer));
+
+            } catch (ConnectException e) {
+
+                Integer aux = selectedServer;
+                Thread.sleep(100);
+                while (aux.equals(selectedServer)) {
+                    System.out.println(1);
+                    selectedServer = random.nextInt(servers.size());
+                }
+
+                try {
+
+                    socket = new Socket("localhost", servers.get(selectedServer));
+
+                } catch (ConnectException ex) {
+
+                    Integer aux2 = selectedServer;
+                    Thread.sleep(100);
+
+                    while (aux.equals(selectedServer) || aux2.equals(selectedServer)) {
+                        selectedServer = random.nextInt(servers.size());
+                    }
+
+                    socket = new Socket("localhost", servers.get(selectedServer));
+                }
+            }
+
             // Envia a mensagem ao servidor selecionado
-            Socket socket = new Socket("localhost", servers.get(selectedServer));
             ObjectOutput output = new ObjectOutputStream(socket.getOutputStream());
 
             if (message.getType() == 0) {
@@ -46,7 +79,7 @@ public class BalancerWorker implements Runnable {
                         " e direcionada para o servidor de dados " + servers.get(selectedServer));
 
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
